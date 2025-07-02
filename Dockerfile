@@ -11,11 +11,15 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# Copy the rest of the app
-COPY . .
+# Copy only necessary files for the build
+COPY package.json pnpm-lock.yaml ./
+COPY next.config.ts tailwind.config.ts postcss.config.mjs ./
+COPY tsconfig.json prettier.config.cjs ./
+COPY src ./src
 
 # Build the Next.js app
-RUN pnpm build
+# RUN pnpm build
+RUN pnpm next build --no-lint
 
 # Production image
 FROM node:20-alpine AS runner
@@ -28,7 +32,6 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/pnpm-lock.yaml ./
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/tailwind.config.ts ./tailwind.config.ts
